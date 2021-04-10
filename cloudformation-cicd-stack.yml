@@ -123,6 +123,16 @@ Parameters:
       - cc2.8xlarge
       - cg1.4xlarge
     ConstraintDescription: Must be a valid Amazon EC2 instance type.
+  RepositoryName:
+    Description: Name of the repository that will be used to push and build the project.
+    Type: String
+    AllowedPattern: '[^A-Z]+'
+    ConstraintDescription: Can contain only ASCII characters and should only contain lowercase characters.
+  EmailAddress:
+    Description: Email Address for sending SNS notifications for CodeCommit.
+    Type: String
+    AllowedPattern: '.+@.+'
+    ConstraintDescription: Must be a valid email.
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -136,6 +146,11 @@ Metadata:
           default: 'Amazon EC2 Configuration'
         Parameters:
           - KeyPairName
+      - Label:
+          default: 'Amazon CodeCommit Configuration'
+        Parameters:
+          - RepositoryName
+          - EmailAddress
     ParameterLabels:
       DevInstanceType:
         default: 'Which instance type this development instance should use?'
@@ -143,6 +158,10 @@ Metadata:
         default: 'Which instance type this production instance should use?'
       KeyPairName:
         default: 'Which key your EC2 instances should use?'
+      RepositoryName:
+        default: 'What is the name of your repository?'
+      EmailAddress:
+        default: 'What e-mail are you going to use for notifications?'
 
 Resources:
   Ec2InstanceIamRole:
@@ -245,7 +264,34 @@ Resources:
           cd /home/ec2-user
           wget https://aws-codedeploy-us-east-2.s3.amazonaws.com/latest/install
           chmod +x ./install
-          sudo ./install auto      
+          sudo ./install auto   
+
+  SNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+      - Endpoint: !Ref EmailAddress
+        Protocol: email
+      Tags:
+        - Key: Created by
+          Value: !Ref AWS::StackName
+
+  CodeCommitRepository:
+    Type: 'AWS::CodeCommit::Repository'
+    Properties:
+      RepositoryDescription: Repository of the project used to push and build commit changes
+      RepositoryName: !Ref RepositoryName
+      Triggers:
+      - Name: BranchTrigger
+        CustomData: !Ref AWS::StackName
+        DestinationArn: !Ref SNSTopic
+        Branches:
+          - master
+        Events:
+          - all
+      Tags:
+        - Key: Created by
+          Value: !Ref AWS::StackName
       
 Outputs:
   StageAppURL:
@@ -254,3 +300,9 @@ Outputs:
   ProdAppURL:
     Description: Prod Application Access URL
     Value: !Sub 'http://${ProdEc2Instance.PublicDnsName}:8080'
+  CodeCommitConsoleUrl:
+    Value: !Sub https://console.aws.amazon.com/codesuite/codecommit/repositories/${RepositoryName}/setup?region=${AWS::Region}
+    Description: Console URL for AWS CodeCommit.
+  GitCloneCommand:
+    Value: !GetAtt CodeCommitRepository.CloneUrlHttp
+    Description: Git Repository HTTP URL used to clone the project.
