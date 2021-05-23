@@ -1,6 +1,8 @@
 Parameters:
   KeyPairName:
-    Description: Name of an existing Amazon key pair to enable SSH or RDP access to the instances
+    Description: >-
+      Name of an existing Amazon key pair to enable SSH or RDP access to the
+      instances
     Type: 'AWS::EC2::KeyPair::KeyName'
     ConstraintDescription: KeyPairName must be the name of an existing KeyPair.
   DevInstanceType:
@@ -127,42 +129,139 @@ Parameters:
     Description: Name of the repository that will be used to push and build the project.
     Type: String
     AllowedPattern: '[^A-Z]+'
-    ConstraintDescription: Can contain only ASCII characters and should only contain lowercase characters.
+    ConstraintDescription: >-
+      Can contain only ASCII characters and should only contain lowercase
+      characters.
   EmailAddress:
     Description: Email Address for sending SNS notifications for CodeCommit.
     Type: String
-    AllowedPattern: '.+@.+'
+    AllowedPattern: .+@.+
     ConstraintDescription: Must be a valid email.
-
 Metadata:
-  AWS::CloudFormation::Interface:
+  'AWS::CloudFormation::Interface':
     ParameterGroups:
       - Label:
-          default: 'EC2 Instance Type'
+          default: EC2 Instance Type
         Parameters:
           - DevInstanceType
           - ProdInstanceType
       - Label:
-          default: 'Amazon EC2 Configuration'
+          default: Amazon EC2 Configuration
         Parameters:
           - KeyPairName
       - Label:
-          default: 'Amazon CodeCommit Configuration'
+          default: Amazon CodeCommit Configuration
         Parameters:
           - RepositoryName
           - EmailAddress
     ParameterLabels:
       DevInstanceType:
-        default: 'Which instance type this development instance should use?'
+        default: Which instance type this development instance should use?
       ProdInstanceType:
-        default: 'Which instance type this production instance should use?'
+        default: Which instance type this production instance should use?
       KeyPairName:
-        default: 'Which key your EC2 instances should use?'
+        default: Which key your EC2 instances should use?
       RepositoryName:
-        default: 'What is the name of your repository?'
+        default: What is the name of your repository?
       EmailAddress:
-        default: 'What e-mail are you going to use for notifications?'
-
+        default: What e-mail are you going to use for notifications?
+  'AWS::CloudFormation::Designer':
+    64bc24ae-0952-406a-9674-2bba01faf3c5:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 160
+        'y': 430
+      z: 1
+      embeds: []
+    913762ee-70aa-4d09-839a-d48ddbc64ef4:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 270
+        'y': 530
+      z: 1
+      embeds: []
+    4301c88f-d554-43da-96e8-63868d9311dc:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 160
+        'y': 730
+      z: 1
+      embeds: []
+    ba5fbd4d-8b18-4f5d-a8ca-25dbd604f53c:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 160
+        'y': 630
+      z: 1
+      embeds: []
+    54eb5331-bc36-49e4-91e7-3e6639523d6a:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 160
+        'y': 530
+      z: 1
+      embeds: []
+    5faad744-7ad1-4185-a5db-aec0abcbf320:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 0
+        'y': 730
+      z: 1
+      embeds: []
+    57bf1dbb-1a4b-4f2f-bb7a-b5ee51bb9776:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 0
+        'y': 490
+      z: 1
+      embeds: []
+    7593caf7-5d2a-4698-b076-8c5645915039:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 0
+        'y': 590
+      z: 1
+      embeds: []
+      isassociatedwith:
+        - 57bf1dbb-1a4b-4f2f-bb7a-b5ee51bb9776
+    5fe32131-59c1-4922-baeb-61853ecdd551:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 80
+        'y': 660
+      z: 1
+      embeds: []
+      isassociatedwith:
+        - 5faad744-7ad1-4185-a5db-aec0abcbf320
+    42068c01-8bdb-48e7-9918-e9ab31c113c7:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: -80
+        'y': 660
+      z: 1
+      embeds: []
+      isassociatedwith:
+        - 5faad744-7ad1-4185-a5db-aec0abcbf320
 Resources:
   Ec2InstanceIamRole:
     Type: 'AWS::IAM::Role'
@@ -186,18 +285,22 @@ Resources:
                   - 's3:Get*'
                   - 's3:List*'
                 Resource: '*'
-
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 57bf1dbb-1a4b-4f2f-bb7a-b5ee51bb9776
   Ec2InstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
       Path: /
       Roles:
         - !Ref Ec2InstanceIamRole
-
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 7593caf7-5d2a-4698-b076-8c5645915039
   Ec2SecurityGroup:
-    Type: AWS::EC2::SecurityGroup
+    Type: 'AWS::EC2::SecurityGroup'
     Properties:
-      GroupDescription: SecurityGroup with port 22, 8080 inbound
+      GroupDescription: 'SecurityGroup with port 22, 8080 inbound'
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: '22'
@@ -207,9 +310,11 @@ Resources:
           FromPort: '8080'
           ToPort: '8080'
           CidrIp: 0.0.0.0/0
-
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 5faad744-7ad1-4185-a5db-aec0abcbf320
   DevEc2Instance:
-    Type: AWS::EC2::Instance
+    Type: 'AWS::EC2::Instance'
     Properties:
       ImageId: ami-5b41123e
       InstanceType: !Ref DevInstanceType
@@ -221,9 +326,9 @@ Resources:
         - Key: Name
           Value: dev
         - Key: Created by
-          Value: !Ref AWS::StackName
-      UserData: 
-        Fn::Base64: |  
+          Value: !Ref 'AWS::StackName'
+      UserData:
+        'Fn::Base64': |
           #!/bin/bash
           sudo yum update
           sudo yum install ruby
@@ -236,9 +341,11 @@ Resources:
           wget https://aws-codedeploy-us-east-2.s3.amazonaws.com/latest/install
           chmod +x ./install
           sudo ./install auto      
-
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 42068c01-8bdb-48e7-9918-e9ab31c113c7
   ProdEc2Instance:
-    Type: AWS::EC2::Instance
+    Type: 'AWS::EC2::Instance'
     Properties:
       ImageId: ami-5b41123e
       InstanceType: !Ref ProdInstanceType
@@ -250,9 +357,9 @@ Resources:
         - Key: Name
           Value: prod
         - Key: Created by
-          Value: !Ref AWS::StackName
-      UserData: 
-        Fn::Base64: |  
+          Value: !Ref 'AWS::StackName'
+      UserData:
+        'Fn::Base64': |
           #!/bin/bash
           sudo yum update
           sudo yum install ruby
@@ -265,109 +372,123 @@ Resources:
           wget https://aws-codedeploy-us-east-2.s3.amazonaws.com/latest/install
           chmod +x ./install
           sudo ./install auto   
-
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 5fe32131-59c1-4922-baeb-61853ecdd551
   SNSTopic:
-    Type: AWS::SNS::Topic
+    Type: 'AWS::SNS::Topic'
     Properties:
       Subscription:
-      - Endpoint: !Ref EmailAddress
-        Protocol: email
+        - Endpoint: !Ref EmailAddress
+          Protocol: email
       Tags:
         - Key: Created by
-          Value: !Ref AWS::StackName
-
+          Value: !Ref 'AWS::StackName'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 4301c88f-d554-43da-96e8-63868d9311dc
   CodeCommitRepository:
     Type: 'AWS::CodeCommit::Repository'
     Properties:
       RepositoryDescription: Repository of the project used to push and build commit changes
       RepositoryName: !Ref RepositoryName
       Triggers:
-      - Name: BranchTrigger
-        CustomData: !Ref AWS::StackName
-        DestinationArn: !Ref SNSTopic
-        Branches:
-          - master
-        Events:
-          - all
+        - Name: BranchTrigger
+          CustomData: !Ref 'AWS::StackName'
+          DestinationArn: !Ref SNSTopic
+          Branches:
+            - master
+          Events:
+            - all
       Tags:
         - Key: Created by
-          Value: !Ref AWS::StackName
-
+          Value: !Ref 'AWS::StackName'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: ba5fbd4d-8b18-4f5d-a8ca-25dbd604f53c
   ArtifactStoreS3Bucket:
-    Type: AWS::S3::Bucket
+    Type: 'AWS::S3::Bucket'
     Properties:
-      BucketName: !Sub artifacts-${AWS::StackName}-${RepositoryName}
+      BucketName: !Sub 'artifacts-${AWS::StackName}-${RepositoryName}'
       Tags:
         - Key: Created by
-          Value: !Ref AWS::StackName
-
+          Value: !Ref 'AWS::StackName'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 913762ee-70aa-4d09-839a-d48ddbc64ef4
   CodeBuildIamRole:
-    Type: "AWS::IAM::Role"
+    Type: 'AWS::IAM::Role'
     Properties:
-      RoleName: !Sub CodeBuildIamRole-${AWS::StackName}
+      RoleName: !Sub 'CodeBuildIamRole-${AWS::StackName}'
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
+        Version: 2012-10-17
         Statement:
-          - Effect: "Allow"
+          - Effect: Allow
             Principal:
               Service:
-                - "codebuild.amazonaws.com"
+                - codebuild.amazonaws.com
             Action:
-              - "sts:AssumeRole"
+              - 'sts:AssumeRole'
       Path: /service-role/
       Policies:
-        - PolicyName: "CodeBuildAccessPolicy"
+        - PolicyName: CodeBuildAccessPolicy
           PolicyDocument:
-            Version: "2012-10-17"
+            Version: 2012-10-17
             Statement:
-              - Effect: "Allow"
+              - Effect: Allow
                 Action:
-                  - "codecommit:GitPull"
+                  - 'codecommit:GitPull'
                 Resource:
-                  - Fn::Sub: arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:${RepositoryName}
-              - Effect: "Allow"
+                  - 'Fn::Sub': >-
+                      arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:${RepositoryName}
+              - Effect: Allow
                 Action:
-                  - "logs:CreateLogGroup"
-                  - "logs:CreateLogStream"
-                  - "logs:PutLogEvents"
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
                 Resource:
-                  - Fn::Sub: arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/*
-              - Effect: "Allow"
+                  - 'Fn::Sub': >-
+                      arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/*
+              - Effect: Allow
                 Action:
-                  - "s3:PutObject"
-                  - "s3:GetObject"
-                  - "s3:GetObjectVersion"
-                  - "s3:ListBucket"
+                  - 's3:PutObject'
+                  - 's3:GetObject'
+                  - 's3:GetObjectVersion'
+                  - 's3:ListBucket'
                 Resource:
-                  - Fn::Sub: arn:aws:s3:::codepipeline-${AWS::Region}-*
-                  - Fn::Sub: arn:aws:s3:::${ArtifactStoreS3Bucket}/*
-                  - Fn::Sub: arn:aws:s3:::${ArtifactStoreS3Bucket}
+                  - 'Fn::Sub': 'arn:aws:s3:::codepipeline-${AWS::Region}-*'
+                  - 'Fn::Sub': 'arn:aws:s3:::${ArtifactStoreS3Bucket}/*'
+                  - 'Fn::Sub': 'arn:aws:s3:::${ArtifactStoreS3Bucket}'
       Tags:
         - Key: Created by
-          Value: !Ref AWS::StackName
-
+          Value: !Ref 'AWS::StackName'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 64bc24ae-0952-406a-9674-2bba01faf3c5
   CodeBuildProject:
-    Type: AWS::CodeBuild::Project
+    Type: 'AWS::CodeBuild::Project'
     Properties:
-      Name: !Sub CodeBuildProject-${AWS::StackName}
-      Description: !Sub Build war file for the ${RepositoryName} application
+      Name: !Sub 'CodeBuildProject-${AWS::StackName}'
+      Description: !Sub 'Build war file for the ${RepositoryName} application'
       ServiceRole: !GetAtt CodeBuildIamRole.Arn
       Artifacts:
         Type: S3
         Location: !Ref ArtifactStoreS3Bucket
-        Name: !Sub ${RepositoryName}-artifacts
+        Name: !Sub '${RepositoryName}-artifacts'
       Environment:
         Type: LINUX_CONTAINER
         ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/standard:2.0
+        Image: 'aws/codebuild/standard:2.0'
       Source:
         Location: !GetAtt CodeCommitRepository.CloneUrlHttp
         Type: CODECOMMIT
       TimeoutInMinutes: 15
       Tags:
         - Key: Created by
-          Value: !Ref AWS::StackName
-      
+          Value: !Ref 'AWS::StackName'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 54eb5331-bc36-49e4-91e7-3e6639523d6a
 Outputs:
   StageAppURL:
     Description: Staging Application Access URL
@@ -376,7 +497,8 @@ Outputs:
     Description: Prod Application Access URL
     Value: !Sub 'http://${ProdEc2Instance.PublicDnsName}:8080'
   CodeCommitConsoleUrl:
-    Value: !Sub https://console.aws.amazon.com/codesuite/codecommit/repositories/${RepositoryName}/setup?region=${AWS::Region}
+    Value: !Sub >-
+      https://console.aws.amazon.com/codesuite/codecommit/repositories/${RepositoryName}/setup?region=${AWS::Region}
     Description: Console URL for AWS CodeCommit.
   GitCloneCommand:
     Value: !GetAtt CodeCommitRepository.CloneUrlHttp
