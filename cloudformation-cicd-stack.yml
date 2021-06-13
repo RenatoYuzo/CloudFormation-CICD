@@ -367,6 +367,69 @@ Resources:
       Tags:
         - Key: Created by
           Value: !Ref AWS::StackName
+
+  CodeDeployIamRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub CodeDeployIamRole-${RepositoryName}
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codedeploy.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: "CodeDeployAccessPolicy"
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ec2:DescribeInstances'
+                  - 'ec2:DescribeInstanceStatus'
+                  - 'ec2:TerminateInstances'
+                  - 'tag:GetTags'
+                  - 'tag:GetResources'
+                  - 'sns:Publish'
+                  - 'cloudwatch:DescribeAlarms'
+                  - 'cloudwatch:PutMetricAlarm'
+                Resource: '*'
+      Tags:
+        - Key: Created by
+          Value: !Ref AWS::StackName
+
+  CodeDeployApplication:
+    Type: AWS::CodeDeploy::Application
+    Properties: 
+      ApplicationName: !Sub application-${RepositoryName}
+      ComputePlatform: Server
+
+  DevDeploymentGroup: 
+    Type: AWS::CodeDeploy::DeploymentGroup
+    Properties: 
+      ApplicationName: !Ref CodeDeployApplication
+      Ec2TagFilters: 
+        - Key: Name
+          Value: dev
+          Type: "KEY_AND_VALUE"
+      ServiceRoleArn: !GetAtt CodeDeployIamRole.Arn      
+      DeploymentGroupName: !Sub DeploymentGroup-${AWS::StackName}
+    DependsOn: DevEc2Instance
+
+  ProdDeploymentGroup: 
+    Type: AWS::CodeDeploy::DeploymentGroup
+    Properties: 
+      ApplicationName: !Ref CodeDeployApplication
+      Ec2TagFilters: 
+        - Key: Name
+          Value: prod
+          Type: "KEY_AND_VALUE"
+      ServiceRoleArn: !GetAtt CodeDeployIamRole.Arn      
+      DeploymentGroupName: !Sub ProdCodeDeployDeploymentGroup-${AWS::StackName}
+    DependsOn: ProdEc2Instance
       
 Outputs:
   StageAppURL:
