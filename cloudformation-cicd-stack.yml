@@ -128,6 +128,9 @@ Parameters:
     Type: String
     AllowedPattern: '[^A-Z]+'
     ConstraintDescription: Can contain only ASCII characters and should only contain lowercase characters.
+  ArtifactStoreS3BucketName:
+    Description: Name of the repository that will be used to push and build the project.
+    Type: String
   EmailAddress:
     Description: Email Address for sending SNS notifications for CodeCommit.
     Type: String
@@ -168,7 +171,7 @@ Resources:
     Type: 'AWS::IAM::Role'
     Properties:
       AssumeRolePolicyDocument:
-        Version: 2012-10-17
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -179,12 +182,10 @@ Resources:
       Policies:
         - PolicyName: Ec2InstanceProfilePolicy
           PolicyDocument:
-            Version: 2012-10-17
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
-                Action:
-                  - 's3:Get*'
-                  - 's3:List*'
+                Action: 's3:*'
                 Resource: '*'
 
   Ec2InstanceProfile:
@@ -211,7 +212,7 @@ Resources:
   DevEc2Instance:
     Type: AWS::EC2::Instance
     Properties:
-      ImageId: ami-5b41123e
+      ImageId: ami-0000025f7c02a13b2
       InstanceType: !Ref DevInstanceType
       KeyName: !Ref KeyPairName
       SecurityGroups:
@@ -219,15 +220,15 @@ Resources:
       IamInstanceProfile: !Ref Ec2InstanceProfile
       Tags:
         - Key: Name
-          Value: dev
+          Value: develop
         - Key: Created by
           Value: !Ref AWS::StackName
       UserData: 
         Fn::Base64: |  
           #!/bin/bash
-          sudo yum update
-          sudo yum install ruby
-          sudo yum install wget
+          sudo yum -y update
+          sudo yum -y install ruby
+          sudo yum -y install wget
           sudo yum -y erase java-1.7.0-openjdk.x86_64
           sudo yum -y install java-1.8.0-openjdk.x86_64
           sudo yum -y install java-1.8.0-openjdk-devel
@@ -240,7 +241,7 @@ Resources:
   ProdEc2Instance:
     Type: AWS::EC2::Instance
     Properties:
-      ImageId: ami-5b41123e
+      ImageId: ami-0000025f7c02a13b2
       InstanceType: !Ref ProdInstanceType
       KeyName: !Ref KeyPairName
       SecurityGroups:
@@ -248,15 +249,15 @@ Resources:
       IamInstanceProfile: !Ref Ec2InstanceProfile
       Tags:
         - Key: Name
-          Value: prod
+          Value: production
         - Key: Created by
           Value: !Ref AWS::StackName
       UserData: 
         Fn::Base64: |  
           #!/bin/bash
-          sudo yum update
-          sudo yum install ruby
-          sudo yum install wget
+          sudo yum -y update
+          sudo yum -y install ruby
+          sudo yum -y install wget
           sudo yum -y erase java-1.7.0-openjdk.x86_64
           sudo yum -y install java-1.8.0-openjdk.x86_64
           sudo yum -y install java-1.8.0-openjdk-devel
@@ -296,7 +297,7 @@ Resources:
   ArtifactStoreS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub artifacts-${AWS::StackName}-${RepositoryName}
+      BucketName: !Ref ArtifactStoreS3BucketName
       Tags:
         - Key: Created by
           Value: !Ref AWS::StackName
@@ -338,10 +339,7 @@ Resources:
                   - "s3:GetObject"
                   - "s3:GetObjectVersion"
                   - "s3:ListBucket"
-                Resource:
-                  - Fn::Sub: arn:aws:s3:::codepipeline-${AWS::Region}-*
-                  - Fn::Sub: arn:aws:s3:::${ArtifactStoreS3Bucket}/*
-                  - Fn::Sub: arn:aws:s3:::${ArtifactStoreS3Bucket}
+                Resource: '*'
       Tags:
         - Key: Created by
           Value: !Ref AWS::StackName
@@ -354,8 +352,8 @@ Resources:
       ServiceRole: !GetAtt CodeBuildIamRole.Arn
       Artifacts:
         Type: S3
-        Location: !Ref ArtifactStoreS3Bucket
-        Name: !Sub ${RepositoryName}-artifacts
+        Location: !Ref ArtifactStoreS3BucketName
+        Name: !Sub CodeBuildProject-${AWS::StackName}
       Environment:
         Type: LINUX_CONTAINER
         ComputeType: BUILD_GENERAL1_SMALL
@@ -388,11 +386,9 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - 'ec2:DescribeInstances'
-                  - 'ec2:DescribeInstanceStatus'
-                  - 'ec2:TerminateInstances'
-                  - 'tag:GetTags'
-                  - 'tag:GetResources'
+                  - 'ec2:*'
+                  - 's3:*'
+                  - 'tag:*'
                   - 'sns:Publish'
                   - 'cloudwatch:DescribeAlarms'
                   - 'cloudwatch:PutMetricAlarm'
@@ -404,7 +400,7 @@ Resources:
   CodeDeployApplication:
     Type: AWS::CodeDeploy::Application
     Properties: 
-      ApplicationName: !Sub application-${RepositoryName}
+      ApplicationName: !Sub application-${AWS::StackName}
       ComputePlatform: Server
 
   DevDeploymentGroup: 
@@ -413,10 +409,10 @@ Resources:
       ApplicationName: !Ref CodeDeployApplication
       Ec2TagFilters: 
         - Key: Name
-          Value: dev
+          Value: develop
           Type: "KEY_AND_VALUE"
       ServiceRoleArn: !GetAtt CodeDeployIamRole.Arn      
-      DeploymentGroupName: !Sub DeploymentGroup-${AWS::StackName}
+      DeploymentGroupName: !Sub DevDeploymentGroup-${AWS::StackName}
     DependsOn: DevEc2Instance
 
   ProdDeploymentGroup: 
@@ -425,14 +421,150 @@ Resources:
       ApplicationName: !Ref CodeDeployApplication
       Ec2TagFilters: 
         - Key: Name
-          Value: prod
+          Value: production
           Type: "KEY_AND_VALUE"
       ServiceRoleArn: !GetAtt CodeDeployIamRole.Arn      
-      DeploymentGroupName: !Sub ProdCodeDeployDeploymentGroup-${AWS::StackName}
+      DeploymentGroupName: !Sub ProdDeploymentGroup-${AWS::StackName}
     DependsOn: ProdEc2Instance
+
+  CodePipelineSNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+        - Endpoint: !Ref EmailAddress
+          Protocol: email
+  
+  CodePipelineRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: !Sub CodePipelineRole-${AWS::StackName}
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "codepipeline.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: /
+      Policies:
+        - PolicyName: "CodePipelineAccessPolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "s3:*"
+                Resource: '*'
+              - Effect: "Allow"
+                Action:
+                  - "sns:Publish"
+                Resource: '*'
+              - Effect: "Allow"
+                Action:
+                  - "codecommit:ListBranches"
+                  - "codecommit:ListRepositories"
+                  - "codecommit:BatchGetRepositories"
+                  - "codecommit:Get*"
+                  - "codecommit:GitPull"
+                  - "codecommit:UploadArchive"
+                Resource: '*'
+              - Effect: "Allow"
+                Action:
+                  - "codebuild:StartBuild"
+                  - "codebuild:BatchGetBuilds"
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 'codedeploy:*'
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 'ec2:*'
+                Resource: '*'
+  
+  DeployPipeline:
+    Type: "AWS::CodePipeline::Pipeline"
+    Properties:
+      Name: !Sub CICDPipe-${AWS::StackName}
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactStoreS3BucketName
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: ApplicationSource
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: CodeCommit
+                Version: 1
+              Configuration:
+                BranchName: master
+                RepositoryName: !Ref RepositoryName
+              OutputArtifacts:
+                - Name: Source
+              RunOrder: 1
+        - Name: Build
+          Actions:
+            - Name: CodeBuild
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              Configuration:
+                ProjectName: !Ref CodeBuildProject
+              InputArtifacts:
+                - Name: Source
+              OutputArtifacts:
+                - Name: Artfc
+              RunOrder: 1
+        - Name: DeployToDevEnvironment
+          Actions:
+            - Name: CodeDeploy
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CodeDeploy
+              Configuration:
+                ApplicationName: !Ref CodeDeployApplication
+                DeploymentGroupName: !Ref DevDeploymentGroup
+              InputArtifacts:
+                - Name: Artfc
+              RunOrder: 1
+        - Name: ProductionApproval
+          Actions:
+            - Name: ProdApproval
+              ActionTypeId:
+                Category: Approval
+                Owner: AWS
+                Version: 1
+                Provider: Manual
+              Configuration:
+                NotificationArn: !Ref CodePipelineSNSTopic
+                CustomData: Approve Production deployment
+              RunOrder: 1
+        - Name: DeployToProductionEnvironment
+          Actions:
+            - Name: CodeDeploy
+              InputArtifacts:
+                - Name: Artfc
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CodeDeploy
+              Configuration:
+                ApplicationName: !Ref CodeDeployApplication
+                DeploymentGroupName: !Ref ProdDeploymentGroup
+              RunOrder: 1
       
 Outputs:
-  StageAppURL:
+  DevAppURL:
     Description: Staging Application Access URL
     Value: !Sub 'http://${DevEc2Instance.PublicDnsName}:8080'
   ProdAppURL:
