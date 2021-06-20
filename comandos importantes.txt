@@ -1,0 +1,5 @@
+Verificar status do codedeploy-agent dentro do seu EC2:
+sudo service codedeploy-agent status
+
+Rota para ver log do deploy detro do seu EC2:
+/opt/codedeploy-agent/deployment-root/deployment-logs/codedeploy-agent-deployments.log
