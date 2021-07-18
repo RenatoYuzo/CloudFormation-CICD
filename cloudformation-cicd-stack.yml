@@ -1,128 +1,4 @@
 Parameters:
-  KeyPairName:
-    Description: Name of an existing Amazon key pair to enable SSH or RDP access to the instances
-    Type: 'AWS::EC2::KeyPair::KeyName'
-    ConstraintDescription: KeyPairName must be the name of an existing KeyPair.
-  DevInstanceType:
-    Description: Amazon instance type for EC2 Development Instance.
-    Type: String
-    Default: t2.micro
-    AllowedValues:
-      - t1.micro
-      - t2.nano
-      - t2.micro
-      - t2.small
-      - t2.medium
-      - t2.large
-      - m1.small
-      - m1.medium
-      - m1.large
-      - m1.xlarge
-      - m2.xlarge
-      - m2.2xlarge
-      - m2.4xlarge
-      - m3.medium
-      - m3.large
-      - m3.xlarge
-      - m3.2xlarge
-      - m4.large
-      - m4.xlarge
-      - m4.2xlarge
-      - m4.4xlarge
-      - m4.10xlarge
-      - c1.medium
-      - c1.xlarge
-      - c3.large
-      - c3.xlarge
-      - c3.2xlarge
-      - c3.4xlarge
-      - c3.8xlarge
-      - c4.large
-      - c4.xlarge
-      - c4.2xlarge
-      - c4.4xlarge
-      - c4.8xlarge
-      - g2.2xlarge
-      - g2.8xlarge
-      - r3.large
-      - r3.xlarge
-      - r3.2xlarge
-      - r3.4xlarge
-      - r3.8xlarge
-      - i2.xlarge
-      - i2.2xlarge
-      - i2.4xlarge
-      - i2.8xlarge
-      - d2.xlarge
-      - d2.2xlarge
-      - d2.4xlarge
-      - d2.8xlarge
-      - hi1.4xlarge
-      - hs1.8xlarge
-      - cr1.8xlarge
-      - cc2.8xlarge
-      - cg1.4xlarge
-    ConstraintDescription: Must be a valid Amazon EC2 instance type.
-  ProdInstanceType:
-    Description: Amazon instance type for EC2 Production Instance.
-    Type: String
-    Default: t2.micro
-    AllowedValues:
-      - t1.micro
-      - t2.nano
-      - t2.micro
-      - t2.small
-      - t2.medium
-      - t2.large
-      - m1.small
-      - m1.medium
-      - m1.large
-      - m1.xlarge
-      - m2.xlarge
-      - m2.2xlarge
-      - m2.4xlarge
-      - m3.medium
-      - m3.large
-      - m3.xlarge
-      - m3.2xlarge
-      - m4.large
-      - m4.xlarge
-      - m4.2xlarge
-      - m4.4xlarge
-      - m4.10xlarge
-      - c1.medium
-      - c1.xlarge
-      - c3.large
-      - c3.xlarge
-      - c3.2xlarge
-      - c3.4xlarge
-      - c3.8xlarge
-      - c4.large
-      - c4.xlarge
-      - c4.2xlarge
-      - c4.4xlarge
-      - c4.8xlarge
-      - g2.2xlarge
-      - g2.8xlarge
-      - r3.large
-      - r3.xlarge
-      - r3.2xlarge
-      - r3.4xlarge
-      - r3.8xlarge
-      - i2.xlarge
-      - i2.2xlarge
-      - i2.4xlarge
-      - i2.8xlarge
-      - d2.xlarge
-      - d2.2xlarge
-      - d2.4xlarge
-      - d2.8xlarge
-      - hi1.4xlarge
-      - hs1.8xlarge
-      - cr1.8xlarge
-      - cc2.8xlarge
-      - cg1.4xlarge
-    ConstraintDescription: Must be a valid Amazon EC2 instance type.
   RepositoryName:
     Description: Name of the repository that will be used to push and build the project.
     Type: String
@@ -167,115 +43,12 @@ Metadata:
         default: 'What e-mail are you going to use for notifications?'
 
 Resources:
-  Ec2InstanceIamRole:
-    Type: 'AWS::IAM::Role'
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - ec2.amazonaws.com
-            Action: 'sts:AssumeRole'
-      Path: /
-      Policies:
-        - PolicyName: Ec2InstanceProfilePolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action: 's3:*'
-                Resource: '*'
-
-  Ec2InstanceProfile:
-    Type: 'AWS::IAM::InstanceProfile'
-    Properties:
-      Path: /
-      Roles:
-        - !Ref Ec2InstanceIamRole
-
-  Ec2SecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: SecurityGroup with port 22, 8080 inbound
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: '22'
-          ToPort: '22'
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
-          FromPort: '8080'
-          ToPort: '8080'
-          CidrIp: 0.0.0.0/0
-
-  DevEc2Instance:
-    Type: AWS::EC2::Instance
-    Properties:
-      ImageId: ami-0000025f7c02a13b2
-      InstanceType: !Ref DevInstanceType
-      KeyName: !Ref KeyPairName
-      SecurityGroups:
-        - !Ref Ec2SecurityGroup
-      IamInstanceProfile: !Ref Ec2InstanceProfile
-      Tags:
-        - Key: Name
-          Value: develop
-        - Key: Created by
-          Value: !Ref AWS::StackName
-      UserData: 
-        Fn::Base64: |  
-          #!/bin/bash
-          sudo yum -y update
-          sudo yum -y install ruby
-          sudo yum -y install wget
-          sudo yum -y erase java-1.7.0-openjdk.x86_64
-          sudo yum -y install java-1.8.0-openjdk.x86_64
-          sudo yum -y install java-1.8.0-openjdk-devel
-          sudo yum -y install tomcat8
-          cd /home/ec2-user
-          wget https://aws-codedeploy-us-east-2.s3.amazonaws.com/latest/install
-          chmod +x ./install
-          sudo ./install auto      
-
-  ProdEc2Instance:
-    Type: AWS::EC2::Instance
-    Properties:
-      ImageId: ami-0000025f7c02a13b2
-      InstanceType: !Ref ProdInstanceType
-      KeyName: !Ref KeyPairName
-      SecurityGroups:
-        - !Ref Ec2SecurityGroup
-      IamInstanceProfile: !Ref Ec2InstanceProfile
-      Tags:
-        - Key: Name
-          Value: production
-        - Key: Created by
-          Value: !Ref AWS::StackName
-      UserData: 
-        Fn::Base64: |  
-          #!/bin/bash
-          sudo yum -y update
-          sudo yum -y install ruby
-          sudo yum -y install wget
-          sudo yum -y erase java-1.7.0-openjdk.x86_64
-          sudo yum -y install java-1.8.0-openjdk.x86_64
-          sudo yum -y install java-1.8.0-openjdk-devel
-          sudo yum -y install tomcat8
-          cd /home/ec2-user
-          wget https://aws-codedeploy-us-east-2.s3.amazonaws.com/latest/install
-          chmod +x ./install
-          sudo ./install auto   
-
   SNSTopic:
     Type: AWS::SNS::Topic
     Properties:
       Subscription:
       - Endpoint: !Ref EmailAddress
         Protocol: email
-      Tags:
-        - Key: Created by
-          Value: !Ref AWS::StackName
 
   CodeCommitRepository:
     Type: 'AWS::CodeCommit::Repository'
@@ -290,17 +63,11 @@ Resources:
           - master
         Events:
           - all
-      Tags:
-        - Key: Created by
-          Value: !Ref AWS::StackName
 
   ArtifactStoreS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Ref ArtifactStoreS3BucketName
-      Tags:
-        - Key: Created by
-          Value: !Ref AWS::StackName
 
   CodeBuildIamRole:
     Type: "AWS::IAM::Role"
@@ -340,9 +107,6 @@ Resources:
                   - "s3:GetObjectVersion"
                   - "s3:ListBucket"
                 Resource: '*'
-      Tags:
-        - Key: Created by
-          Value: !Ref AWS::StackName
 
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
@@ -362,9 +126,7 @@ Resources:
         Location: !GetAtt CodeCommitRepository.CloneUrlHttp
         Type: CODECOMMIT
       TimeoutInMinutes: 15
-      Tags:
-        - Key: Created by
-          Value: !Ref AWS::StackName
+    DependsOn: ArtifactStoreS3Bucket
 
   CodeDeployIamRole:
     Type: 'AWS::IAM::Role'
@@ -393,9 +155,6 @@ Resources:
                   - 'cloudwatch:DescribeAlarms'
                   - 'cloudwatch:PutMetricAlarm'
                 Resource: '*'
-      Tags:
-        - Key: Created by
-          Value: !Ref AWS::StackName
 
   CodeDeployApplication:
     Type: AWS::CodeDeploy::Application
@@ -413,7 +172,6 @@ Resources:
           Type: "KEY_AND_VALUE"
       ServiceRoleArn: !GetAtt CodeDeployIamRole.Arn      
       DeploymentGroupName: !Sub DevDeploymentGroup-${AWS::StackName}
-    DependsOn: DevEc2Instance
 
   ProdDeploymentGroup: 
     Type: AWS::CodeDeploy::DeploymentGroup
@@ -425,7 +183,6 @@ Resources:
           Type: "KEY_AND_VALUE"
       ServiceRoleArn: !GetAtt CodeDeployIamRole.Arn      
       DeploymentGroupName: !Sub ProdDeploymentGroup-${AWS::StackName}
-    DependsOn: ProdEc2Instance
 
   CodePipelineSNSTopic:
     Type: AWS::SNS::Topic
@@ -564,12 +321,6 @@ Resources:
               RunOrder: 1
       
 Outputs:
-  DevAppURL:
-    Description: Staging Application Access URL
-    Value: !Sub 'http://${DevEc2Instance.PublicDnsName}:8080'
-  ProdAppURL:
-    Description: Prod Application Access URL
-    Value: !Sub 'http://${ProdEc2Instance.PublicDnsName}:8080'
   CodeCommitConsoleUrl:
     Value: !Sub https://console.aws.amazon.com/codesuite/codecommit/repositories/${RepositoryName}/setup?region=${AWS::Region}
     Description: Console URL for AWS CodeCommit.

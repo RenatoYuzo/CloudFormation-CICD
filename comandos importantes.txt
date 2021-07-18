@@ -1,5 +1,17 @@
+Entrar no seu EC2 por linha de comando:
+ssh -i "AwsKeyPair.pem" ec2-user@54.197.122.240
+
 Verificar status do codedeploy-agent dentro do seu EC2:
 sudo service codedeploy-agent status
 
 Rota para ver log do deploy detro do seu EC2:
 /opt/codedeploy-agent/deployment-root/deployment-logs/codedeploy-agent-deployments.log
+
+Copiar um aquivo local para sua instância EC2:
+scp -i AwsKeyPair.pem ProjetoAplicado.war ec2-user@ec2-3-88-0-163.compute-1.amazonaws.com:~/.
+
+Tomcat's default app is place in /var/lib/tomcat8/webapps
+sudo mv ProjetoAplicado.war /usr/share/tomcat8/webapps/
+
+Redirecionar requisições na porta 80 para a porta 8080 dentro do EC2:
+sudo iptables -t nat -I PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080
